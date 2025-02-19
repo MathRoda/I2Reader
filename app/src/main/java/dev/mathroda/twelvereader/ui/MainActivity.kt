@@ -1,4 +1,4 @@
-package dev.mathroda.twelvereader
+package dev.mathroda.twelvereader.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
