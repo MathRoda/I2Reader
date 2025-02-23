@@ -1,5 +1,7 @@
 package dev.mathroda.twelvereader.network.di
 
+import dev.mathroda.twelvereader.network.NetworkService
+import dev.mathroda.twelvereader.network.NetworkServiceImpl
 import dev.mathroda.twelvereader.network.interceptor.OkhttpInterceptor
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
@@ -11,8 +13,8 @@ import kotlinx.serialization.json.Json
 
 import org.koin.dsl.module
 
-private const val BASE_URL = "https://api.elevenlabs.io/v1/"
-private val API_KEY: String = TODO("Please enter your API Key")
+private const val BASE_URL = "https://api.elevenlabs.io"
+private val API_KEY: String = "sk_1277d7bdde90c282a4bd8dc9b3f41aa5acb1be2c9145bcf4" //TODO("Please enter your API Key")
 
 val networkModule = module {
     val engine = OkHttp.create {
@@ -34,4 +36,6 @@ val networkModule = module {
             }
         }
     }
+
+    single<NetworkService> { NetworkServiceImpl(get()) }
 }
