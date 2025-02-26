@@ -9,4 +9,6 @@ interface Repository {
         pageSize: Int = 10,
         language: String = "en"
     ): Flow<Resource<List<Voice>>>
+
+    fun getVoiceById(voiceId: String): Flow<Resource<Voice>>
 }

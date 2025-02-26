@@ -3,8 +3,6 @@ package dev.mathroda.twelvereader.infrastructure.mediaplayer
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class MyMediaPlayer(
      private val context: Context
@@ -46,6 +44,8 @@ class MyMediaPlayer(
     }
 
     fun release() {
-        mediaPlayer.release()
+        if (::mediaPlayer.isInitialized) {
+            mediaPlayer.release()
+        }
     }
 }

@@ -1,11 +1,13 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package dev.mathroda.twelvereader.ui.navigation
 
-import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
-import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -36,7 +38,7 @@ fun MainGraph(
         }
 
         composable<Destination.Home> {
-            Text("Home")
+            HomeScreen()
         }
     }
 }
