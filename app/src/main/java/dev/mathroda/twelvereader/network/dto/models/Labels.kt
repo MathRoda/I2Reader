@@ -1,4 +1,4 @@
-package dev.mathroda.twelvereader.network.dto.domain
+package dev.mathroda.twelvereader.network.dto.models
 
 
 import kotlinx.serialization.SerialName

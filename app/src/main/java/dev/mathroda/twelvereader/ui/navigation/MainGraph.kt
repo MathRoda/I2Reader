@@ -2,6 +2,7 @@
 
 package dev.mathroda.twelvereader.ui.navigation
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -9,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingScreen
+import dev.mathroda.twelvereader.ui.screens.writetext.WriteTextScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -22,8 +24,13 @@ sealed class Destination {
     @Serializable
     @SerialName("Home")
     data object Home : Destination()
+
+    @Serializable
+    @SerialName("WriteText")
+    data object WriteText : Destination()
 }
 
+@ExperimentalLayoutApi
 @Composable
 fun MainGraph(
     navController: NavHostController,
@@ -38,7 +45,15 @@ fun MainGraph(
         }
 
         composable<Destination.Home> {
-            HomeScreen()
+            HomeScreen(
+                navigateToWriteText = { navController.navigate(Destination.WriteText) }
+            )
+        }
+
+        composable<Destination.WriteText> {
+            WriteTextScreen(
+                navigateBack = navController::navigateUp
+            )
         }
     }
 }

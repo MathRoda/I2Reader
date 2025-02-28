@@ -82,7 +82,8 @@ fun OnboardingScreen() {
                     updateChosenVoice = { voice ->
                         selectedVoice = voice
                         viewModel.playVoiceSample(voice)
-                    }
+                    },
+                    colors = viewModel.colors
                 )
                 is Resource.Error -> {}
             }
@@ -92,6 +93,7 @@ fun OnboardingScreen() {
 
 @Composable
 fun VoicesList(
+    colors: List<Color>,
     selectedVoice: Voice?,
     voices: () -> List<Voice>,
     updateChosenVoice: (Voice) -> Unit
@@ -104,7 +106,8 @@ fun VoicesList(
             CommonVoiceCard(
                 voice = voice,
                 isSelected = voice == selectedVoice,
-                updateChosenVoice = updateChosenVoice
+                updateChosenVoice = updateChosenVoice,
+                colors = colors
             )
         }
     }

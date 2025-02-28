@@ -46,6 +46,7 @@ import dev.mathroda.twelvereader.domain.Voice
 @Composable
 fun CommonVoiceCard(
     voice: Voice,
+    colors: List<Color>,
     isSelected: Boolean = false,
     modifier: Modifier = Modifier,
     updateChosenVoice: (Voice) -> Unit
@@ -78,7 +79,9 @@ fun CommonVoiceCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AbstractCircleArt()
+            AbstractCircleArt(
+                colors = colors
+            )
 
             Text(
                 text = name,
@@ -97,6 +100,7 @@ fun CommonVoiceCard(
 @Composable
 fun CommonVoiceRow(
     voice: Voice,
+    colors: List<Color>,
     isSelected: Boolean = false,
     modifier: Modifier = Modifier,
     onPreview: (String) -> Unit,
@@ -115,7 +119,8 @@ fun CommonVoiceRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         AbstractCircleArt(
-            modifier = Modifier.size(54.dp)
+            modifier = Modifier.size(54.dp),
+            colors = colors
         )
 
         Column(
@@ -182,17 +187,11 @@ fun CommonVoiceRow(
 
 @Composable
 fun AbstractCircleArt(
+    colors: List<Color>,
     modifier: Modifier = Modifier.size(48.dp)
 ) {
-    val colors = remember {
-        listOf(
-            Color(0xFF00B0FF), Color(0xFF00E5FF), Color(0xFF1DE9B6),
-            Color(0xFF76FF03), Color(0xFFFFEA00), Color(0xFFFF9100),
-            Color(0xFFFF1744), Color(0xFFD500F9), Color(0xFF6200EA)
-        )
-    }
 
-    val randomGradient = remember {
+    val randomGradient = remember(colors) {
         Brush.sweepGradient(
             colors = colors.shuffled(),
             center = Offset(100f, 100f)
@@ -219,7 +218,7 @@ fun AbstractCircleArt(
         drawPath(
             path = path,
             brush = Brush.radialGradient(
-                colors = colors.shuffled(),
+                colors = colors,
                 center = center,
                 radius = size.minDimension * 0.5f
             ),

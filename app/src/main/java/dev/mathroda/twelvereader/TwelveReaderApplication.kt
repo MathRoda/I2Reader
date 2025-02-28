@@ -1,6 +1,7 @@
 package dev.mathroda.twelvereader
 
 import android.app.Application
+import android.content.Context
 import dev.mathroda.twelvereader.cache.di.cacheModule
 import dev.mathroda.twelvereader.infrastructure.di.infrastructureModule
 import dev.mathroda.twelvereader.network.di.networkModule
@@ -23,6 +24,21 @@ class TwelveReaderApplication: Application() {
                 repositoryModule,
                 viewModelModule
             )
+        }
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        clearCache(this)
+    }
+
+    private fun clearCache(context: Context) {
+        context.cacheDir?.let { cacheDir ->
+            cacheDir.listFiles()?.forEach { file ->
+                if (file.name.contains(".mp3")) {
+                    file.deleteRecursively()
+                }
+            }
         }
     }
 }

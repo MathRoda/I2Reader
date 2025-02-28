@@ -2,10 +2,10 @@ package dev.mathroda.twelvereader.network.dto
 
 
 import dev.mathroda.twelvereader.domain.Voice
-import dev.mathroda.twelvereader.network.dto.domain.FineTuning
-import dev.mathroda.twelvereader.network.dto.domain.Labels
-import dev.mathroda.twelvereader.network.dto.domain.Settings
-import dev.mathroda.twelvereader.network.dto.domain.VoiceVerification
+import dev.mathroda.twelvereader.network.dto.models.FineTuning
+import dev.mathroda.twelvereader.network.dto.models.Labels
+import dev.mathroda.twelvereader.network.dto.models.Settings
+import dev.mathroda.twelvereader.network.dto.models.VoiceVerification
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

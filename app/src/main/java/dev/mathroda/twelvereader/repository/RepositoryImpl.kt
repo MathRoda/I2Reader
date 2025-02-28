@@ -1,8 +1,10 @@
 package dev.mathroda.twelvereader.repository
 
 import android.util.Log
+import dev.mathroda.twelvereader.domain.TextToSpeech
 import dev.mathroda.twelvereader.domain.Voice
 import dev.mathroda.twelvereader.network.NetworkService
+import dev.mathroda.twelvereader.network.dto.toTextToSpeech
 import dev.mathroda.twelvereader.network.dto.toVoice
 import dev.mathroda.twelvereader.network.utils.ApiServiceException
 import dev.mathroda.twelvereader.utils.Resource
@@ -36,6 +38,20 @@ class RepositoryImpl(
                 val response = service.getVoiceById(voiceId)
                     .toVoice()
                 Log.d("RepositoryImpl", "getVoiceById: $response")
+                emit(Resource.Success(response))
+            }catch (e: ApiServiceException) {
+                emit(Resource.Error("Couldn't reach server. Check your internet connection"))
+            }catch (e: Throwable ){
+                emit(Resource.Error("Something went wrong"))
+            }
+        }
+    }
+
+    override fun textToSpeech(text: String, voiceId: String): Flow<Resource<TextToSpeech>> {
+        return flow {
+            emit(Resource.Loading())
+            try {
+                val response = service.postTextToSpeech(text, voiceId).toTextToSpeech()
                 emit(Resource.Success(response))
             }catch (e: ApiServiceException) {
                 emit(Resource.Error("Couldn't reach server. Check your internet connection"))
