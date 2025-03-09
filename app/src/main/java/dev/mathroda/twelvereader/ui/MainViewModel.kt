@@ -1,12 +1,9 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
 package dev.mathroda.twelvereader.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mathroda.twelvereader.cache.datastore.DataStoreManager
 import dev.mathroda.twelvereader.ui.navigation.Destination
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map

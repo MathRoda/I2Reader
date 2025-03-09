@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "dev.mathroda.twelvereader"
-        minSdk = 24
+        minSdk = 27
         versionCode = 1
         versionName = "1.0"
 
@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.koin.compose.viewmodel)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.smarttoolfactory.compose.colorful.sliders)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

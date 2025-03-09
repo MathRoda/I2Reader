@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalEncodingApi::class)
 
 package dev.mathroda.twelvereader.domain
 
@@ -6,7 +5,6 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 data class TextToSpeech(
     val decodedAudio: ByteArray

@@ -78,13 +78,12 @@ class HomeViewModel(
             mediaPlayer.stop()
             currentPlayingVoice = null
         } else {
-            mediaPlayer.setupUrl(previewUrl)
+            mediaPlayer.setup(previewUrl)
             currentPlayingVoice = previewUrl
         }
     }
 
-    override fun onCleared() {
-        super.onCleared()
+    fun clearMediaPlayer() {
         mediaPlayer.release()
     }
 

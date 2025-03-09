@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
+import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerScreen
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingScreen
 import dev.mathroda.twelvereader.ui.screens.writetext.WriteTextScreen
 import kotlinx.serialization.SerialName
@@ -28,6 +30,10 @@ sealed class Destination {
     @Serializable
     @SerialName("WriteText")
     data object WriteText : Destination()
+
+    @Serializable
+    @SerialName("MainPlayer")
+    data class MainPlayer(val uri: String) : Destination()
 }
 
 @ExperimentalLayoutApi
@@ -52,7 +58,23 @@ fun MainGraph(
 
         composable<Destination.WriteText> {
             WriteTextScreen(
-                navigateBack = navController::navigateUp
+                navigateBack = navController::navigateUp,
+                navigateToMainPlayer = { uri, text ->
+                    navController.currentBackStackEntry?.apply {
+                        savedStateHandle["text"] = text
+                    }
+
+                    navController.navigate(Destination.MainPlayer(uri))
+                }
+            )
+        }
+
+        composable<Destination.MainPlayer> { backStackEntry ->
+            val route: Destination.MainPlayer = backStackEntry.toRoute()
+            MainPlayerScreen(
+                uri = route.uri,
+                text = navController.previousBackStackEntry?.savedStateHandle?.get<String>("text") ?: "",
+                navigateBack = { navController.navigateUp() }
             )
         }
     }

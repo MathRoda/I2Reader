@@ -1,5 +1,6 @@
 [versions]
 agp = "8.7.3"
+composeColorfulSlidersVersion = "1.2.2"
 kotlin = "2.0.0"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -48,6 +49,7 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization"}
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation-compose"}
 androidx-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+smarttoolfactory-compose-colorful-sliders = { module = "com.github.SmartToolFactory:Compose-Colorful-Sliders", version.ref = "composeColorfulSlidersVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

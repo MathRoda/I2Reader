@@ -239,23 +239,19 @@ fun CommonVoiceRowShimmer(modifier: Modifier = Modifier) {
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 ShimmerBox(modifier = Modifier.size(100.dp, 18.dp))
                 ShimmerBox(modifier = Modifier.size(150.dp, 14.dp))
             }
 
-            Box(
-                modifier = Modifier
-                    .background(Color.LightGray.copy(0.4f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                contentAlignment = Alignment.Center
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ShimmerBox(modifier = Modifier.size(60.dp, 16.dp))
-                }
+                ShimmerBox(modifier = Modifier.size(60.dp, 16.dp))
             }
         }
     }

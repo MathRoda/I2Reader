@@ -4,18 +4,23 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mathroda.twelvereader.cache.datastore.DataStoreManager
-import dev.mathroda.twelvereader.infrastructure.mediaplayer.MyMediaPlayer
 import dev.mathroda.twelvereader.repository.Repository
 import dev.mathroda.twelvereader.utils.Resource
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+sealed interface WriteScreenActions {
+    data class NavigateToMainPlayer(val uri: String, val text: String): WriteScreenActions
+    data class ShowToastMessage(val message: String): WriteScreenActions
+}
+
 class WriteTextViewModel(
-    private val mediaPlayer: MyMediaPlayer,
     private val repository: Repository,
     private val dataStore: DataStoreManager,
     private val context: Application
@@ -23,6 +28,9 @@ class WriteTextViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
+
+    private val _uiActions = MutableSharedFlow<WriteScreenActions>(replay = 0)
+    val uiActions = _uiActions.asSharedFlow()
 
     fun textToSpeech(
         text: String
@@ -36,9 +44,13 @@ class WriteTextViewModel(
                         is Resource.Success -> {
                             updateIsLoading(false)
                             val file = result.data.createMp3File(context)
-                            mediaPlayer.setupFile(file)
+                            _uiActions.emit(WriteScreenActions.NavigateToMainPlayer(file.path, text))
                         }
-                        is Resource.Error -> Unit
+                        is Resource.Error -> {
+                            updateIsLoading(false)
+                            _uiActions.emit(WriteScreenActions.ShowToastMessage(result.message))
+                        }
+
                     }
                 }
         }
@@ -47,10 +59,4 @@ class WriteTextViewModel(
     private fun updateIsLoading(loading: Boolean)  {
         _isLoading.update { loading }
     }
-
-    override fun onCleared() {
-        super.onCleared()
-        mediaPlayer.release()
-    }
-
 }

@@ -29,6 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,6 +60,12 @@ fun HomeScreen(
     val library by viewModel.voices.collectAsStateWithLifecycle()
     val currentVoiceState by viewModel.currentVoiceState
     var isBottomSheetOpen by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearMediaPlayer()
+        }
+    }
 
     Scaffold(
         topBar = {

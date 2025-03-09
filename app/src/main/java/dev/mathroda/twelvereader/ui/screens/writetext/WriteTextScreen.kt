@@ -1,5 +1,6 @@
 package dev.mathroda.twelvereader.ui.screens.writetext
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,23 +31,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 
 @ExperimentalMaterial3Api
 @Composable
 fun WriteTextScreen(
-    navigateBack: () -> Unit
+    navigateBack: () -> Unit,
+    navigateToMainPlayer: (uri: String, text: String) -> Unit
 ) {
     val viewModel: WriteTextViewModel = koinViewModel()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     var text by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
+    LaunchedEffect(viewModel.uiActions) {
+        viewModel.uiActions.collectLatest {
+            when(it) {
+                is WriteScreenActions.NavigateToMainPlayer -> {
+                    keyboardController?.hide()
+                    navigateToMainPlayer(it.uri, it.text)
+                }
+                is WriteScreenActions.ShowToastMessage -> {
+                    Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     Scaffold(
@@ -87,6 +104,11 @@ fun WriteTextScreen(
            )
         }
     ) { paddingValues ->
+
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()

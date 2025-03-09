@@ -49,7 +49,7 @@ class OnboardingViewModel(
             mediaPlayer.stop()
             currentPlayingVoice = null
         } else {
-            mediaPlayer.setupUrl(voice.previewUrl)
+            mediaPlayer.setup(voice.previewUrl)
             currentPlayingVoice = voice
         }
     }

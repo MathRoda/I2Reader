@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
             val selectedVoice by viewModel.selectedVoice.collectAsStateWithLifecycle()
             val navHostController = rememberNavController()
 
-            TwelveReaderTheme {
+            TwelveReaderTheme(dynamicColor = false) {
                 Box(Modifier.safeDrawingPadding()) {
                     MainGraph(
                         navController = navHostController,
