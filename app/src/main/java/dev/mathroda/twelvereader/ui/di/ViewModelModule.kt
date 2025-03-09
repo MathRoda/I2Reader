@@ -13,5 +13,5 @@ val viewModelModule = module {
     viewModel { OnboardingViewModel(get(), get(), get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { WriteTextViewModel(get(), get(), get()) }
-    viewModel { MainPlayerViewModel(get()) }
+    viewModel { MainPlayerViewModel(get(), get()) }
 }

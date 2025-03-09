@@ -30,29 +30,44 @@ class MyMediaPlayer(
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState = _playerState.asStateFlow()
 
+    val totalDuration: Long
+        get() = mediaPlayer?.duration?.coerceAtLeast(0) ?: 0
+
+    val currentPosition: Long
+        get() = mediaPlayer?.currentPosition?.coerceAtLeast(0) ?: 0
+
 
     fun setup(
-        url: String,
-        playWhenReady: Boolean = true
+        vararg url: String,
+        playWhenReady: Boolean = true,
+        speed: Float = 1f,
     ) {
-        initialize(playWhenReady) {
-            val mediaItem = MediaItem.fromUri(url)
-            addMediaItem(mediaItem)
+        initialize(
+            playWhenReady = playWhenReady,
+            speed = speed
+        ) {
+            val mediaItem = url.map { MediaItem.fromUri(it) }
+            addMediaItems(mediaItem)
         }
     }
 
     fun setup(
-        file: File,
-        playWhenReady: Boolean = true
+        vararg file: File,
+        playWhenReady: Boolean = true,
+        speed: Float = 1f,
     ) {
-        initialize(playWhenReady) {
-            val mediaItem = MediaItem.fromUri(file.toUri())
-            addMediaItem(mediaItem)
+        initialize(
+            playWhenReady = playWhenReady,
+            speed = speed
+        ) {
+            val mediaItem = file.map {  MediaItem.fromUri(it.toUri()) }
+            addMediaItems(mediaItem)
         }
     }
 
     private fun initialize(
         playWhenReady: Boolean = true,
+        speed: Float = 1f,
         setup: ExoPlayer.() -> Unit
     ) {
         listener = object : Player.Listener {
@@ -79,6 +94,7 @@ class MyMediaPlayer(
                 listener?.let { addListener(it) }
                 addAnalyticsListener(EventLogger())
                 setup()
+                setPlaybackSpeed(speed)
                 prepare()
                 setPlayWhenReady(playWhenReady)
             }
@@ -104,6 +120,14 @@ class MyMediaPlayer(
         Log.d(TAG, "paused")
     }
 
+    fun seekTo(position: Long) {
+        mediaPlayer?.seekTo(position)
+    }
+
+    fun setPlaybackSpeed(speed: Float) {
+        mediaPlayer?.setPlaybackSpeed(speed)
+    }
+
     fun release() {
         mediaPlayer?.apply {
             listener?.let { removeListener(it) }
@@ -112,10 +136,6 @@ class MyMediaPlayer(
         mediaPlayer = null
         listener = null
         Log.d(TAG, "released")
-    }
-
-    fun seekTo(position: Long) {
-        mediaPlayer?.seekTo(position)
     }
 
     private fun Int.toPlayerState(isPlaying: Boolean): MediaPlayerState = when (this) {

@@ -1,28 +1,28 @@
 package dev.mathroda.twelvereader.ui.screens.mainplayer
 
-import android.os.SystemClock
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.mathroda.twelvereader.cache.datastore.DataStoreManager
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.MyMediaPlayer
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.PlayerState
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
-sealed interface MainPlayerUiActions {
-    data class Play(val uri: String): MainPlayerUiActions
-    data object Pause: MainPlayerUiActions
-    data object Resume: MainPlayerUiActions
-    data class SeekTo(val position: Long): MainPlayerUiActions
-}
-
 class MainPlayerViewModel(
-    private val mediaPlayer: MyMediaPlayer
+    private val mediaPlayer: MyMediaPlayer,
+    private val dataStoreManager: DataStoreManager
 ): ViewModel() {
 
     val playerState: StateFlow<PlayerState>
@@ -31,19 +31,37 @@ class MainPlayerViewModel(
     private val _sliderPosition = MutableStateFlow(0L)
     val sliderPosition = _sliderPosition.asStateFlow()
 
-    private var lastResumeTime: Long = 0L
-    private var accumulatedTime: Long = 0L
-    private var job: Job? = null
+    val mediaSpeed: StateFlow<Float>
+        get() = dataStoreManager.MediaSpeedDefault()
+            .value
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000L),
+                1f
+            )
+
+    val colors =  listOf(
+        Color(0xFF00B0FF), Color(0xFF00E5FF), Color(0xFF1DE9B6),
+        Color(0xFF76FF03), Color(0xFFFFEA00), Color(0xFFFF9100),
+        Color(0xFFFF1744), Color(0xFFD500F9), Color(0xFF6200EA)
+    )
+
+    init {
+        viewModelScope.launch {
+            while (isActive) {
+                _sliderPosition.update { mediaPlayer.currentPosition }
+                delay(100L)
+            }
+        }
+    }
 
     fun onAction(action: MainPlayerUiActions) {
         when(action) {
-            is MainPlayerUiActions.Play -> {
-                initializeMedia(action.uri)
-                resumeMedia()
-            }
+            is MainPlayerUiActions.Play -> initializeMedia(action.uri, playWhenReady = true)
             is MainPlayerUiActions.Resume-> resumeMedia()
             is MainPlayerUiActions.Pause -> pauseMedia()
             is MainPlayerUiActions.SeekTo -> seekTo(action.position)
+            is MainPlayerUiActions.SetSpeed -> setPlaybackSpeed(action.speed)
         }
     }
 
@@ -51,18 +69,25 @@ class MainPlayerViewModel(
         uri: String,
         playWhenReady: Boolean = false
     ) {
-        resetTimer()
-        val file = File(uri)
-        mediaPlayer.setup(file, playWhenReady = playWhenReady)
+        viewModelScope.launch(Dispatchers.IO) {
+            val speed = dataStoreManager.MediaSpeedDefault().value.first()
+            withContext(Dispatchers.Main) {
+                updateSliderPosition(0L)
+                val file = File(uri)
+                mediaPlayer.setup(
+                    file,
+                    playWhenReady = playWhenReady,
+                    speed = speed
+                )
+            }
+        }
     }
 
     private fun resumeMedia() {
-        startTimer()
         mediaPlayer.resume()
     }
 
     private fun pauseMedia() {
-        pauseTimer()
         mediaPlayer.pause()
     }
 
@@ -72,41 +97,22 @@ class MainPlayerViewModel(
     }
 
     fun clearMediaPlayer() {
-        resetTimer()
         mediaPlayer.release()
     }
 
-    private fun startTimer() {
-        if (lastResumeTime == 0L) {
-            lastResumeTime = SystemClock.elapsedRealtime()
-        }
 
-        job = viewModelScope.launch {
-            while (sliderPosition.value != playerState.value.totalDuration) {
-                val elapsedTime = SystemClock.elapsedRealtime() - lastResumeTime
-                val currentTime = (accumulatedTime + elapsedTime).coerceAtMost(playerState.value.totalDuration)
-                updateSliderPosition(currentTime)
-                delay(1000L) // Update timer every second
-            }
-        }
+    private fun setPlaybackSpeed(speed: Float) {
+        mediaPlayer.setPlaybackSpeed(speed)
+        updateMediaSpeed(speed)
     }
 
-    private fun pauseTimer() {
-        job?.cancel()
-        accumulatedTime += SystemClock.elapsedRealtime() - lastResumeTime
-        lastResumeTime = 0L
-    }
-
-    private fun resetTimer() {
-        job?.cancel()
-        accumulatedTime = 0L
-        lastResumeTime = 0L
-        updateSliderPosition(0L)
+    private fun updateMediaSpeed(speed: Float) {
+        viewModelScope.launch {
+            dataStoreManager.MediaSpeedDefault().update(speed)
+        }
     }
 
     private fun updateSliderPosition(position: Long) {
-        accumulatedTime = position
         _sliderPosition.update { position }
-        lastResumeTime = SystemClock.elapsedRealtime()
     }
 }
