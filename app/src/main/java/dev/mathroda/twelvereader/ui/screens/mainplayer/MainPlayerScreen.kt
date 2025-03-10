@@ -43,7 +43,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smarttoolfactory.slider.ColorfulSlider
@@ -66,12 +69,14 @@ import kotlin.math.roundToInt
 fun MainPlayerScreen(
     uri: String,
     text: String,
-    navigateBack: () -> Unit
+    navigateBack: () -> Unit,
+    navigateToSelectVoice: () -> Unit
 ) {
     val viewModel: MainPlayerViewModel = koinViewModel()
     val mediaPlayerState by viewModel.playerState.collectAsStateWithLifecycle()
     val sliderPositions by viewModel.sliderPosition.collectAsStateWithLifecycle()
     val mediaSpeed by viewModel.mediaSpeed.collectAsStateWithLifecycle()
+    val currentReader by viewModel.currentReader.collectAsStateWithLifecycle()
     var textToSpeech by remember { mutableStateOf("") }
     var isBottomSheetOpen by remember { mutableStateOf(false) }
 
@@ -95,7 +100,9 @@ fun MainPlayerScreen(
                 mediaPlayerState = mediaPlayerState.current,
                 onValueChange = { viewModel.onAction(MainPlayerUiActions.SeekTo(it.toLong())) },
                 onAction = viewModel::onAction,
-                openSpeedBottomSheet = { isBottomSheetOpen = true }
+                openSpeedBottomSheet = { isBottomSheetOpen = true },
+                navigateToSelectVoice = navigateToSelectVoice,
+                reader = currentReader
             )
         }
     ) { paddingValues ->
@@ -188,13 +195,15 @@ fun MediaPlayerController(
     currentTime: Long,
     totalTime: Long,
     speed: Float,
+    reader: String,
     colors: List<Color>,
     mediaPlayerState: MediaPlayerState= MediaPlayerState.IDLE,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     modifier: Modifier = Modifier,
     onValueChange: (Float) -> Unit,
     onAction: (MainPlayerUiActions) -> Unit,
-    openSpeedBottomSheet: () -> Unit
+    openSpeedBottomSheet: () -> Unit,
+    navigateToSelectVoice: () -> Unit
 ) {
     Column(
         modifier = modifier
@@ -301,7 +310,7 @@ fun MediaPlayerController(
 
         OutlinedButton(
             modifier = Modifier.fillMaxWidth(0.6f),
-            onClick = {},
+            onClick = navigateToSelectVoice,
             contentPadding = PaddingValues(start = 4.dp, end = 16.dp, top = 4.dp, bottom = 4.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.3f))
         ) {
@@ -311,7 +320,14 @@ fun MediaPlayerController(
             )
 
             Spacer(Modifier.width(8.dp))
-            Text("Read by Thomas")
+            Text(
+                buildAnnotatedString {
+                    append("Read by ")
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(reader)
+                    }
+                }
+            )
         }
     }
 }

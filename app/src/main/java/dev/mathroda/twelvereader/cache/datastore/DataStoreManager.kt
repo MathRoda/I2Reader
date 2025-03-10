@@ -18,19 +18,33 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = dat
 class DataStoreManager(
     private val context: Context
 ) {
-    private val SELECTED_VOICE_KEY = stringPreferencesKey("selected_voice")
+    private val SELECTED_VOICE_ID_KEY = stringPreferencesKey("selected_voice_id")
+    private val SELECTED_VOICE_NAME_KEY = stringPreferencesKey("selected_voice_name")
     private val MEDIA_SPEED_DEFAULT_KEY = floatPreferencesKey("media_speed_default")
 
+
+    data class DataStoreVoice(
+        val id: String = "",
+        val name: String = ""
+    )
+
     inner class SelectedVoice {
-        val value: Flow<String>
+        val value: Flow<DataStoreVoice>
             get() = context.dataStore.data.map {
-                it[SELECTED_VOICE_KEY] ?: ""
+                DataStoreVoice(
+                    id = it[SELECTED_VOICE_ID_KEY] ?: "",
+                    name = it[SELECTED_VOICE_NAME_KEY] ?: ""
+                )
             }
 
-        suspend fun update(value: String) {
+        suspend fun update(
+            id: String,
+            name: String
+        ) {
             withContext(Dispatchers.IO) {
                 context.dataStore.edit {
-                    it[SELECTED_VOICE_KEY] = value
+                    it[SELECTED_VOICE_ID_KEY] = id
+                    it[SELECTED_VOICE_NAME_KEY] = name
                 }
             }
         }

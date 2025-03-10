@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
+package dev.mathroda.twelvereader.ui.screens.selectvoice
 
-package dev.mathroda.twelvereader.ui.screens.home
-
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,32 +8,36 @@ import dev.mathroda.twelvereader.domain.Voice
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.MyMediaPlayer
 import dev.mathroda.twelvereader.repository.Repository
 import dev.mathroda.twelvereader.utils.Resource
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-
-class HomeViewModel(
-    private val datastore: DataStoreManager,
+class SelectVoiceViewModel(
     private val repository: Repository,
+    private val datastore: DataStoreManager,
     private val mediaPlayer: MyMediaPlayer
 ): ViewModel() {
 
     private var currentPlayingVoice: String? = null
 
-    var currentVoiceState = mutableStateOf("")
-        private set
-
-    private val _selectedVoice = MutableStateFlow<Resource<Voice>>(Resource.Loading())
-    val selectedVoice = _selectedVoice.asStateFlow()
-
     private val _voices = MutableStateFlow<Resource<List<Voice>>>(Resource.Loading())
     val voices = _voices.asStateFlow()
+
+    val selectedVoice: StateFlow<DataStoreManager.DataStoreVoice>
+        get() = datastore.SelectedVoice()
+            .value
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000L),
+                DataStoreManager.DataStoreVoice()
+            )
+
 
     val colors =  listOf(
         Color(0xFF00B0FF), Color(0xFF00E5FF), Color(0xFF1DE9B6),
@@ -45,18 +46,7 @@ class HomeViewModel(
     )
 
     init {
-        observeSelectedVoice()
         observeVoices()
-    }
-
-    private fun observeSelectedVoice() {
-        datastore.SelectedVoice().value
-            .flatMapLatest { voice ->
-                currentVoiceState.value = voice.id
-                delay(500)
-                repository.getVoiceById(voice.id)
-            }.onEach(_selectedVoice::emit)
-            .launchIn(viewModelScope)
     }
 
     private fun observeVoices() {
@@ -65,8 +55,9 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
-    fun updateSelectedVoice(voice: Voice) {
-        viewModelScope.launch {
+    fun updateCurrentVoice(voice: Voice) {
+        playVoiceSample(voice.previewUrl)
+        viewModelScope.launch(Dispatchers.IO) {
             datastore.SelectedVoice().update(
                 id = voice.voiceId,
                 name = voice.name
@@ -74,7 +65,7 @@ class HomeViewModel(
         }
     }
 
-    fun playVoiceSample(
+    private fun playVoiceSample(
         previewUrl: String
     ) {
         if (currentPlayingVoice == previewUrl) {
@@ -89,5 +80,4 @@ class HomeViewModel(
     fun clearMediaPlayer() {
         mediaPlayer.release()
     }
-
 }

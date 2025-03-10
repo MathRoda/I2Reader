@@ -140,7 +140,7 @@ fun HomeScreen(
                             colors = viewModel.colors,
                             isSelected = currentVoiceState == voice.voiceId,
                             onPreview = viewModel::playVoiceSample,
-                            onFavoriteVoice = { viewModel.updateSelectedVoice(it.voiceId) }
+                            onFavoriteVoice = viewModel::updateSelectedVoice
                         )
                         HorizontalDivider(
                             modifier = Modifier.padding(vertical = 16.dp),

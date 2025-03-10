@@ -50,7 +50,7 @@ fun OnboardingScreen() {
                 enabled = selectedVoice != null,
                 onClick = {
                     selectedVoice?.let {
-                        viewModel.updateSelectedVoice(it.voiceId)
+                        viewModel.updateSelectedVoice(it)
                     }
                 }
             ) { Text("Continue") }

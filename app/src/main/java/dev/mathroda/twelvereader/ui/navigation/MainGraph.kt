@@ -12,6 +12,7 @@ import androidx.navigation.toRoute
 import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
 import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerScreen
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingScreen
+import dev.mathroda.twelvereader.ui.screens.selectvoice.SelectVoiceScreen
 import dev.mathroda.twelvereader.ui.screens.writetext.WriteTextScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -34,6 +35,10 @@ sealed class Destination {
     @Serializable
     @SerialName("MainPlayer")
     data class MainPlayer(val uri: String) : Destination()
+
+    @Serializable
+    @SerialName("SelectVoice")
+    data object SelectVoice: Destination()
 }
 
 @ExperimentalLayoutApi
@@ -74,7 +79,14 @@ fun MainGraph(
             MainPlayerScreen(
                 uri = route.uri,
                 text = navController.previousBackStackEntry?.savedStateHandle?.get<String>("text") ?: "",
-                navigateBack = { navController.navigateUp() }
+                navigateBack = navController::navigateUp,
+                navigateToSelectVoice = { navController.navigate(Destination.SelectVoice) }
+            )
+        }
+
+        composable<Destination.SelectVoice> {
+            SelectVoiceScreen(
+                navigateBack = navController::navigateUp
             )
         }
     }

@@ -16,7 +16,7 @@ class MainViewModel(
     val selectedVoice: StateFlow<Destination>
         get() = dataStore.SelectedVoice().value
             .map { voice ->
-                if (voice.isEmpty()) Destination.Onboarding else Destination.Home
+                if (voice.id.isEmpty()) Destination.Onboarding else Destination.Home
             }.stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000L),

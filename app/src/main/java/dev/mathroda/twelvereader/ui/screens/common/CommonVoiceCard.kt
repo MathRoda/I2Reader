@@ -103,6 +103,7 @@ fun CommonVoiceRow(
     colors: List<Color>,
     isSelected: Boolean = false,
     modifier: Modifier = Modifier,
+    isPreviewEnabled: Boolean = true,
     onPreview: (String) -> Unit,
     onFavoriteVoice: (Voice) -> Unit
 ) {
@@ -142,29 +143,31 @@ fun CommonVoiceRow(
                 )
             }
 
-            Box(
-                modifier = Modifier
-                    .background(Color.LightGray.copy(0.4f), RoundedCornerShape(8.dp))
-                    .bouncingClickable { onPreview(voice.previewUrl) }
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (isPreviewEnabled) {
+                Box(
+                    modifier = Modifier
+                        .background(Color.LightGray.copy(0.4f), RoundedCornerShape(8.dp))
+                        .bouncingClickable { onPreview(voice.previewUrl) }
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Headphones,
-                        contentDescription = "Headset"
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Headphones,
+                            contentDescription = "Headset"
+                        )
 
-                    Text(
-                        text = "Preview",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                        Text(
+                            text = "Preview",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                 }
-
             }
         }
 

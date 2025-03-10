@@ -36,8 +36,8 @@ class WriteTextViewModel(
         text: String
     ) {
         viewModelScope.launch {
-            val voiceId = dataStore.SelectedVoice().value.first()
-            repository.textToSpeech(text, voiceId)
+            val voice = dataStore.SelectedVoice().value.first()
+            repository.textToSpeech(text, voice.id)
                 .collectLatest { result ->
                     when(result) {
                         is Resource.Loading -> updateIsLoading(true)

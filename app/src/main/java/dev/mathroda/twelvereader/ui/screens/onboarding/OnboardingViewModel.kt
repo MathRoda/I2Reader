@@ -36,9 +36,12 @@ class OnboardingViewModel(
                 Resource.Loading()
             )
 
-    fun updateSelectedVoice(value: String) {
+    fun updateSelectedVoice(voice: Voice) {
         viewModelScope.launch {
-            datastore.SelectedVoice().update(value)
+            datastore.SelectedVoice().update(
+                id = voice.voiceId,
+                name = voice.name
+            )
         }
     }
 
