@@ -21,6 +21,7 @@ import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
@@ -35,7 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.smarttoolfactory.slider.ColorfulSlider
 import com.smarttoolfactory.slider.MaterialSliderDefaults
@@ -56,6 +58,7 @@ import dev.mathroda.twelvereader.infrastructure.mediaplayer.MediaPlayerState
 import dev.mathroda.twelvereader.ui.common.BaseButton
 import dev.mathroda.twelvereader.ui.screens.common.AbstractCircleArt
 import dev.mathroda.twelvereader.ui.screens.mainplayer.models.SpeedDefaults
+import dev.mathroda.twelvereader.utils.OnLifecycleEvent
 import dev.mathroda.twelvereader.utils.takeWordsUpTo
 import dev.mathroda.twelvereader.utils.toDisplay
 import dev.mathroda.twelvereader.utils.toTime
@@ -69,6 +72,7 @@ import kotlin.math.roundToInt
 fun MainPlayerScreen(
     uri: String,
     text: String,
+    didVoiceChange: Boolean,
     navigateBack: () -> Unit,
     navigateToSelectVoice: () -> Unit
 ) {
@@ -76,14 +80,14 @@ fun MainPlayerScreen(
     val mediaPlayerState by viewModel.playerState.collectAsStateWithLifecycle()
     val sliderPositions by viewModel.sliderPosition.collectAsStateWithLifecycle()
     val mediaSpeed by viewModel.mediaSpeed.collectAsStateWithLifecycle()
-    val currentReader by viewModel.currentReader.collectAsStateWithLifecycle()
-    var textToSpeech by remember { mutableStateOf("") }
+    val currentReader by viewModel.currentReader.collectAsStateWithLifecycle("")
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     var isBottomSheetOpen by remember { mutableStateOf(false) }
 
-    DisposableEffect(Unit) {
-        viewModel.initializeMedia(uri)
-        textToSpeech = text
-        onDispose { viewModel.clearMediaPlayer() }
+    LaunchedEffect(uri, didVoiceChange) {
+        if (!didVoiceChange) {
+            viewModel.uri = uri
+        }
     }
 
     Scaffold(
@@ -102,7 +106,8 @@ fun MainPlayerScreen(
                 onAction = viewModel::onAction,
                 openSpeedBottomSheet = { isBottomSheetOpen = true },
                 navigateToSelectVoice = navigateToSelectVoice,
-                reader = currentReader
+                reader = currentReader,
+                isLoading = isLoading
             )
         }
     ) { paddingValues ->
@@ -115,7 +120,7 @@ fun MainPlayerScreen(
                     .padding(16.dp)
             ) {
                 MainPlayerHeader(
-                    textToSpeech = textToSpeech.takeWordsUpTo(7)
+                    textToSpeech = text.takeWordsUpTo(7)
                 )
             }
 
@@ -130,6 +135,15 @@ fun MainPlayerScreen(
                     )
                 }
             }
+        }
+    }
+
+    OnLifecycleEvent { event ->
+        when(event) {
+            Lifecycle.Event.ON_PAUSE -> viewModel.clearMediaPlayer()
+            Lifecycle.Event.ON_RESUME -> viewModel.reInitializeMedia(didVoiceChange, text)
+            Lifecycle.Event.ON_DESTROY -> viewModel.clearMediaPlayer()
+            else -> Unit
         }
     }
 }
@@ -199,6 +213,7 @@ fun MediaPlayerController(
     colors: List<Color>,
     mediaPlayerState: MediaPlayerState= MediaPlayerState.IDLE,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     onValueChange: (Float) -> Unit,
     onAction: (MainPlayerUiActions) -> Unit,
@@ -272,16 +287,21 @@ fun MediaPlayerController(
                 onClick = {
                     when(mediaPlayerState) {
                         MediaPlayerState.PLAYING, MediaPlayerState.IDLE -> onAction(MainPlayerUiActions.Pause)
-                        MediaPlayerState.ENDED -> onAction(MainPlayerUiActions.Play(uri))
+                        MediaPlayerState.ENDED -> onAction(MainPlayerUiActions.Play)
                         MediaPlayerState.PAUSED -> onAction(MainPlayerUiActions.Resume)
                     }
                 },
+                enabled = !isLoading,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(0.2f))
             ) {
-                Icon(
-                    imageVector = if (mediaPlayerState == MediaPlayerState.PLAYING) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = "Play"
-                )
+                if (isLoading) {
+                    CircularProgressIndicator()
+                } else {
+                    Icon(
+                        imageVector = if (mediaPlayerState == MediaPlayerState.PLAYING) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                        contentDescription = "Play"
+                    )
+                }
             }
 
             IconButton(

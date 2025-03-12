@@ -80,13 +80,19 @@ fun MainGraph(
                 uri = route.uri,
                 text = navController.previousBackStackEntry?.savedStateHandle?.get<String>("text") ?: "",
                 navigateBack = navController::navigateUp,
+                didVoiceChange = navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>("didVoiceChange") ?: false,
                 navigateToSelectVoice = { navController.navigate(Destination.SelectVoice) }
             )
         }
 
         composable<Destination.SelectVoice> {
             SelectVoiceScreen(
-                navigateBack = navController::navigateUp
+                navigateBack = { didVoiceChange ->
+                    navController.previousBackStackEntry?.apply {
+                        savedStateHandle["didVoiceChange"] = didVoiceChange
+                    }
+                    navController.navigateUp()
+                }
             )
         }
     }

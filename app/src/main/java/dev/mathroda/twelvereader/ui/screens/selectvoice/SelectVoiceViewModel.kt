@@ -77,6 +77,10 @@ class SelectVoiceViewModel(
         }
     }
 
+    fun stopMedia() {
+        mediaPlayer.stop()
+    }
+
     fun clearMediaPlayer() {
         mediaPlayer.release()
     }

@@ -27,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -43,11 +45,12 @@ import org.koin.compose.viewmodel.koinViewModel
 @ExperimentalMaterial3Api
 @Composable
 fun SelectVoiceScreen(
-    navigateBack: () -> Unit
+    navigateBack: (didVoiceChange: Boolean) -> Unit,
 ) {
     val viewModel: SelectVoiceViewModel = koinViewModel()
     val library by viewModel.voices.collectAsStateWithLifecycle()
     val selectVoice by viewModel.selectedVoice.collectAsStateWithLifecycle()
+    val defaultVoiceId by remember { mutableStateOf(selectVoice.id) }
 
     DisposableEffect(Unit) {
         onDispose { viewModel.clearMediaPlayer() }
@@ -58,7 +61,11 @@ fun SelectVoiceScreen(
             CommonTopBar(
                 title = { Text(text = "Select a voice", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) },
                 icon = { Icon(imageVector = Icons.Default.Close, contentDescription = null) },
-                onAction = navigateBack
+                onAction = {
+                    viewModel.stopMedia()
+                    val didVoiceChange = defaultVoiceId != selectVoice.id
+                    navigateBack(didVoiceChange)
+                }
             )
         }
     ) { paddingValues ->

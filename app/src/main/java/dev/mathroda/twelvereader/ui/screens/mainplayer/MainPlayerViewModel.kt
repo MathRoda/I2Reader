@@ -1,17 +1,22 @@
 package dev.mathroda.twelvereader.ui.screens.mainplayer
 
+import android.app.Application
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mathroda.twelvereader.cache.datastore.DataStoreManager
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.MyMediaPlayer
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.PlayerState
+import dev.mathroda.twelvereader.repository.Repository
+import dev.mathroda.twelvereader.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -23,14 +28,21 @@ import java.io.File
 
 class MainPlayerViewModel(
     private val mediaPlayer: MyMediaPlayer,
-    private val dataStoreManager: DataStoreManager
+    private val dataStoreManager: DataStoreManager,
+    private val repository: Repository,
+    private val context: Application
 ): ViewModel() {
+
+    var uri: String = ""
 
     val playerState: StateFlow<PlayerState>
         get() = mediaPlayer.playerState
 
     private val _sliderPosition = MutableStateFlow(0L)
     val sliderPosition = _sliderPosition.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
     val mediaSpeed: StateFlow<Float>
         get() = dataStoreManager.MediaSpeedDefault()
@@ -41,15 +53,10 @@ class MainPlayerViewModel(
                 1f
             )
 
-    val currentReader: StateFlow<String>
+    val currentReader: Flow<String>
         get() = dataStoreManager.SelectedVoice()
             .value
             .map { it.name.split(" ")[0] }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(5000L),
-                ""
-            )
 
     val colors =  listOf(
         Color(0xFF00B0FF), Color(0xFF00E5FF), Color(0xFF1DE9B6),
@@ -68,7 +75,7 @@ class MainPlayerViewModel(
 
     fun onAction(action: MainPlayerUiActions) {
         when(action) {
-            is MainPlayerUiActions.Play -> initializeMedia(action.uri, playWhenReady = true)
+            is MainPlayerUiActions.Play -> initializeMedia(uri, playWhenReady = true)
             is MainPlayerUiActions.Resume-> resumeMedia()
             is MainPlayerUiActions.Pause -> pauseMedia()
             is MainPlayerUiActions.SeekTo -> seekTo(action.position)
@@ -76,7 +83,35 @@ class MainPlayerViewModel(
         }
     }
 
-    fun initializeMedia(
+    fun reInitializeMedia(
+        didVoiceChange: Boolean,
+        text: String
+    ) {
+        if (!didVoiceChange) {
+            initializeMedia(uri)
+            return
+        }
+
+        viewModelScope.launch {
+            val voice = dataStoreManager.SelectedVoice().value.first()
+            repository.textToSpeech(text, voice.id)
+                .collectLatest { result ->
+                    when(result) {
+                        is Resource.Loading -> updateIsLoading(true)
+                        is Resource.Success -> {
+                            updateIsLoading(false)
+                            val file = result.data.createMp3File(context)
+                            uri = file.absolutePath
+                            initializeMedia(uri)
+                        }
+                        is Resource.Error -> updateIsLoading(false)
+
+                    }
+                }
+        }
+    }
+
+    private fun initializeMedia(
         uri: String,
         playWhenReady: Boolean = false
     ) {
@@ -121,6 +156,10 @@ class MainPlayerViewModel(
         viewModelScope.launch {
             dataStoreManager.MediaSpeedDefault().update(speed)
         }
+    }
+
+    private fun updateIsLoading(loading: Boolean)  {
+        _isLoading.update { loading }
     }
 
     private fun updateSliderPosition(position: Long) {
