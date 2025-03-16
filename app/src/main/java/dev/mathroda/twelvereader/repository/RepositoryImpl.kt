@@ -47,17 +47,13 @@ class RepositoryImpl(
         }
     }
 
-    override fun textToSpeech(text: String, voiceId: String): Flow<Resource<TextToSpeech>> {
-        return flow {
-            emit(Resource.Loading())
-            try {
-                val response = service.postTextToSpeech(text, voiceId).toTextToSpeech()
-                emit(Resource.Success(response))
-            }catch (e: ApiServiceException) {
-                emit(Resource.Error("Couldn't reach server. Check your internet connection"))
-            }catch (e: Throwable ){
-                emit(Resource.Error("Something went wrong"))
-            }
+    override suspend fun textToSpeech(text: String, voiceId: String): TextToSpeech {
+        return try {
+            service.postTextToSpeech(text, voiceId).toTextToSpeech()
+        }catch (e: ApiServiceException) {
+            throw Throwable("Couldn't reach server. Check your internet connection")
+        }catch (e: Throwable ) {
+            throw Throwable("Something went wrong")
         }
     }
 

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalLayoutApi::class)
+
 package dev.mathroda.twelvereader.ui.screens.mainplayer
 
 import androidx.compose.foundation.BorderStroke
@@ -5,6 +7,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,7 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +65,6 @@ import dev.mathroda.twelvereader.utils.OnLifecycleEvent
 import dev.mathroda.twelvereader.utils.takeWordsUpTo
 import dev.mathroda.twelvereader.utils.toDisplay
 import dev.mathroda.twelvereader.utils.toTime
-import org.koin.compose.viewmodel.koinViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -70,32 +72,24 @@ import kotlin.math.roundToInt
 @ExperimentalMaterial3Api
 @Composable
 fun MainPlayerScreen(
-    uri: String,
-    text: String,
+    viewModel: MainPlayerViewModel,
     didVoiceChange: Boolean,
     navigateBack: () -> Unit,
     navigateToSelectVoice: () -> Unit
 ) {
-    val viewModel: MainPlayerViewModel = koinViewModel()
     val mediaPlayerState by viewModel.playerState.collectAsStateWithLifecycle()
     val sliderPositions by viewModel.sliderPosition.collectAsStateWithLifecycle()
     val mediaSpeed by viewModel.mediaSpeed.collectAsStateWithLifecycle()
     val currentReader by viewModel.currentReader.collectAsStateWithLifecycle("")
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val spokenText by viewModel.spokenText.collectAsStateWithLifecycle()
     var isBottomSheetOpen by remember { mutableStateOf(false) }
-
-    LaunchedEffect(uri, didVoiceChange) {
-        if (!didVoiceChange) {
-            viewModel.uri = uri
-        }
-    }
 
     Scaffold(
         topBar = { MainPlayerTopBar(navigateBack) },
         bottomBar = {
             MediaPlayerController(
                 modifier = Modifier.fillMaxWidth(),
-                uri = uri,
                 currentTime = sliderPositions,
                 speed = mediaSpeed,
                 colors = viewModel.colors,
@@ -120,7 +114,15 @@ fun MainPlayerScreen(
                     .padding(16.dp)
             ) {
                 MainPlayerHeader(
-                    textToSpeech = text.takeWordsUpTo(7)
+                    textToSpeech = spokenText.text.takeWordsUpTo(7)
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                MainPlayerBody(
+                    totalTime = mediaPlayerState.totalDuration,
+                    currentTime = sliderPositions,
+                    text = spokenText.text
                 )
             }
 
@@ -140,8 +142,16 @@ fun MainPlayerScreen(
 
     OnLifecycleEvent { event ->
         when(event) {
-            Lifecycle.Event.ON_PAUSE -> viewModel.clearMediaPlayer()
-            Lifecycle.Event.ON_RESUME -> viewModel.reInitializeMedia(didVoiceChange, text)
+            Lifecycle.Event.ON_STOP -> {
+                viewModel.clearMediaPlayer()
+                viewModel.shouldReinitialize = true
+            }
+            Lifecycle.Event.ON_START -> {
+                if (viewModel.shouldReinitialize) {
+                    viewModel.reInitializeMedia(didVoiceChange, spokenText.text)
+                    viewModel.shouldReinitialize = false
+                }
+            }
             Lifecycle.Event.ON_DESTROY -> viewModel.clearMediaPlayer()
             else -> Unit
         }
@@ -205,7 +215,6 @@ private fun MainPlayerHeader(
 @ExperimentalMaterial3Api
 @Composable
 fun MediaPlayerController(
-    uri: String,
     currentTime: Long,
     totalTime: Long,
     speed: Float,
@@ -441,4 +450,37 @@ private fun SpeedDefaultButton(
             fontWeight = FontWeight.Bold
         )
     }
+}
+
+@Composable
+private fun MainPlayerBody(
+    text: String,
+    currentTime: Long,
+    totalTime: Long
+) {
+    val words = remember(text) { text.split(" ") }
+    val estimatedIndex by remember(totalTime, currentTime, words) {
+        derivedStateOf {
+            ((currentTime.toFloat() / totalTime) * words.size)
+                .toInt()
+                .coerceIn(0, words.lastIndex)
+        }
+    }
+
+    Text(
+        buildAnnotatedString {
+            words.forEachIndexed { index, word ->
+                val isHighlighted = index == estimatedIndex && word.isNotBlank()
+                withStyle(
+                    SpanStyle(
+                        color = if (isHighlighted) Color.White else MaterialTheme.colorScheme.onSurface,
+                        background = if (isHighlighted) Color.Blue.copy(0.5f) else MaterialTheme.colorScheme.surface,
+                        fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal
+                    )
+                ) {
+                    append("$word ")
+                }
+            }
+        }
+    )
 }

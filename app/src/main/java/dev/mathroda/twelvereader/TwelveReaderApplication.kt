@@ -3,6 +3,7 @@ package dev.mathroda.twelvereader
 import android.app.Application
 import android.content.Context
 import dev.mathroda.twelvereader.cache.di.cacheModule
+import dev.mathroda.twelvereader.domain.TextToSpeech
 import dev.mathroda.twelvereader.infrastructure.di.infrastructureModule
 import dev.mathroda.twelvereader.network.di.networkModule
 import dev.mathroda.twelvereader.repository.di.repositoryModule
@@ -35,7 +36,7 @@ class TwelveReaderApplication: Application() {
     private fun clearCache(context: Context) {
         context.cacheDir?.let { cacheDir ->
             cacheDir.listFiles()?.forEach { file ->
-                if (file.name.contains(".mp3")) {
+                if (file.name.contains(TextToSpeech.FILE_NAME)) {
                     file.deleteRecursively()
                 }
             }

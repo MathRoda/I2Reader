@@ -6,6 +6,7 @@ package dev.mathroda.twelvereader.network.dto
 import dev.mathroda.twelvereader.domain.TextToSpeech
 import dev.mathroda.twelvereader.network.dto.models.Alignment
 import dev.mathroda.twelvereader.network.dto.models.NormalizedAlignment
+import dev.mathroda.twelvereader.network.dto.models.toCharsTiming
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.io.encoding.Base64
@@ -27,7 +28,8 @@ fun TextToSpeechDto.toTextToSpeech(): TextToSpeech {
     }
 
     return TextToSpeech(
-        decodedAudio = Base64.decode(audioBase64)
+        decodedAudio = Base64.decode(audioBase64),
+        charsTiming = normalizedAlignment?.toCharsTiming() ?: emptyList()
     )
 
 }

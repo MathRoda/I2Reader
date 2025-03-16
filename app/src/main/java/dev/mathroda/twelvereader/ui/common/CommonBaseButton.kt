@@ -44,7 +44,7 @@ fun BaseButton(
 ) {
     val absoluteElevation = LocalAbsoluteTonalElevation.current + tonalElevation
     CompositionLocalProvider(
-        LocalContentColor provides contentColor,
+        LocalContentColor provides if (enabled) contentColor else contentColor.copy(0.4f),
         LocalAbsoluteTonalElevation provides absoluteElevation
     ) {
         Box(
@@ -53,7 +53,7 @@ fun BaseButton(
                 .surface(
                     shape = shape,
                     backgroundColor = surfaceColorAtElevation(
-                        color = color,
+                        color = if (enabled) color else color.copy(0.4f),
                         elevation = absoluteElevation
                     ),
                     border = border,
