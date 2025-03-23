@@ -12,22 +12,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material.icons.filled.ImportExport
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -40,7 +45,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.mathroda.twelvereader.ui.common.BaseButton
-import dev.mathroda.twelvereader.ui.screens.common.CommonTopBar
 import dev.mathroda.twelvereader.ui.screens.common.CommonVoiceCard
 import dev.mathroda.twelvereader.ui.screens.common.CommonVoiceCardShimmer
 import dev.mathroda.twelvereader.ui.screens.common.CommonVoiceRow
@@ -52,7 +56,8 @@ import org.koin.compose.viewmodel.koinViewModel
 @ExperimentalMaterial3Api
 @Composable
 fun HomeScreen(
-    navigateToWriteText: () -> Unit
+    navigateToWriteText: () -> Unit,
+    navigateToSetApiKey: () -> Unit
 ) {
 
     val viewModel: HomeViewModel = koinViewModel()
@@ -60,6 +65,7 @@ fun HomeScreen(
     val library by viewModel.voices.collectAsStateWithLifecycle()
     val currentVoiceState by viewModel.currentVoiceState
     var isBottomSheetOpen by remember { mutableStateOf(false) }
+
 
     DisposableEffect(Unit) {
         onDispose {
@@ -69,10 +75,37 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            CommonTopBar(
-                title = { Text(text = "Voices", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold) },
-                icon = { Icon(imageVector = Icons.Default.Add, contentDescription = null) },
-                onAction = { isBottomSheetOpen = true }
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Voices",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    FilledIconButton(
+                        onClick = { isBottomSheetOpen = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                    }
+
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    FilledIconButton(
+                        onClick = navigateToSetApiKey,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    ) {
+                        Icon(imageVector = Icons.Default.Key, contentDescription = "Set API Key")
+                    }
+                }
             )
         }
     ) { paddingValues ->

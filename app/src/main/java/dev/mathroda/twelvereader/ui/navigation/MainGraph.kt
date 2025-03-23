@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import dev.mathroda.twelvereader.ui.screens.apikey.SetApiKeyScreen
 import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
 import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerScreen
 import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerViewModel
@@ -40,6 +41,10 @@ sealed class Destination {
     @Serializable
     @SerialName("SelectVoice")
     data object SelectVoice: Destination()
+
+    @Serializable
+    @SerialName("SetApiKey")
+    data object SetApiKey : Destination()
 }
 
 @ExperimentalLayoutApi
@@ -58,7 +63,8 @@ fun MainGraph(
 
         composable<Destination.Home> {
             HomeScreen(
-                navigateToWriteText = { navController.navigate(Destination.WriteText) }
+                navigateToWriteText = { navController.navigate(Destination.WriteText) },
+                navigateToSetApiKey = { navController.navigate(Destination.SetApiKey) }
             )
         }
 
@@ -93,6 +99,13 @@ fun MainGraph(
                     }
                     navController.navigateUp()
                 }
+            )
+        }
+
+        composable<Destination.SetApiKey> {
+            SetApiKeyScreen(
+                navigateBack = navController::navigateUp,
+                isFirstInStack = navController.previousBackStackEntry == null
             )
         }
     }

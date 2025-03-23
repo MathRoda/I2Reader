@@ -26,7 +26,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val viewModel: MainViewModel = koinViewModel()
-            val selectedVoice by viewModel.selectedVoice.collectAsStateWithLifecycle()
+            val selectedVoice by viewModel.startDestination.collectAsStateWithLifecycle()
             val navHostController = rememberNavController()
 
             TwelveReaderTheme(dynamicColor = false) {

@@ -18,6 +18,7 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = dat
 class DataStoreManager(
     private val context: Context
 ) {
+    private val ELEVEN_LABS_API_KEY = stringPreferencesKey("eleven_labs_api_key")
     private val SELECTED_VOICE_ID_KEY = stringPreferencesKey("selected_voice_id")
     private val SELECTED_VOICE_NAME_KEY = stringPreferencesKey("selected_voice_name")
     private val MEDIA_SPEED_DEFAULT_KEY = floatPreferencesKey("media_speed_default")
@@ -60,6 +61,21 @@ class DataStoreManager(
             withContext(Dispatchers.IO) {
                 context.dataStore.edit {
                     it[MEDIA_SPEED_DEFAULT_KEY] = value
+                }
+            }
+        }
+    }
+
+    inner class ElevenLabsApiKey {
+        val value: Flow<String>
+            get() = context.dataStore.data.map {
+                it[ELEVEN_LABS_API_KEY] ?: ""
+            }
+
+        suspend fun update(value: String) {
+            withContext(Dispatchers.IO) {
+                context.dataStore.edit {
+                    it[ELEVEN_LABS_API_KEY] = value
                 }
             }
         }

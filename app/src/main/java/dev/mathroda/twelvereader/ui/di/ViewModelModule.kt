@@ -1,6 +1,7 @@
 package dev.mathroda.twelvereader.ui.di
 
 import dev.mathroda.twelvereader.ui.MainViewModel
+import dev.mathroda.twelvereader.ui.screens.apikey.SetApiKeyViewModel
 import dev.mathroda.twelvereader.ui.screens.home.HomeViewModel
 import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerViewModel
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingViewModel
@@ -15,4 +16,5 @@ val viewModelModule = module {
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { MainPlayerViewModel(get(), get(), get(), context = androidApplication()) }
     viewModel { SelectVoiceViewModel(get(), get(), get()) }
+    viewModel { SetApiKeyViewModel(get()) }
 }
