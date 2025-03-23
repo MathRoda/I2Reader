@@ -8,16 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import dev.mathroda.twelvereader.ui.screens.apikey.SetApiKeyScreen
+import androidx.navigation.toRoute
 import dev.mathroda.twelvereader.ui.screens.home.HomeScreen
 import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerScreen
-import dev.mathroda.twelvereader.ui.screens.mainplayer.MainPlayerViewModel
 import dev.mathroda.twelvereader.ui.screens.onboarding.OnboardingScreen
 import dev.mathroda.twelvereader.ui.screens.selectvoice.SelectVoiceScreen
+import dev.mathroda.twelvereader.ui.screens.setapikey.SetApiKeyScreen
 import dev.mathroda.twelvereader.ui.screens.writetext.WriteTextScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.koin.compose.viewmodel.koinViewModel
 
 
 @Serializable
@@ -36,7 +35,7 @@ sealed class Destination {
 
     @Serializable
     @SerialName("MainPlayer")
-    data object MainPlayer : Destination()
+    data class MainPlayer(val uri: String) : Destination()
 
     @Serializable
     @SerialName("SelectVoice")
@@ -67,23 +66,19 @@ fun MainGraph(
             )
         }
 
-        composable<Destination.WriteText> { backStackEntry ->
-            val viewModel: MainPlayerViewModel = koinViewModel(viewModelStoreOwner = backStackEntry)
-
+        composable<Destination.WriteText> {
             WriteTextScreen(
-                viewModel = viewModel,
                 navigateBack = navController::navigateUp,
-                navigateToMainPlayer = { navController.navigate(Destination.MainPlayer) }
+                navigateToMainPlayer = { uri ->
+                    navController.navigate(Destination.MainPlayer(uri))
+                }
             )
         }
 
-        composable<Destination.MainPlayer> {
-            val viewModel: MainPlayerViewModel = navController.previousBackStackEntry?.let {
-                koinViewModel(viewModelStoreOwner = it)
-            } ?: run { koinViewModel() }
-
+        composable<Destination.MainPlayer> { backStackEntry ->
+            val route: Destination.MainPlayer = backStackEntry.toRoute()
             MainPlayerScreen(
-                viewModel = viewModel,
+                uri = route.uri,
                 navigateBack = navController::navigateUp,
                 didVoiceChange = navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>("didVoiceChange") ?: false,
                 navigateToSelectVoice = { navController.navigate(Destination.SelectVoice) }

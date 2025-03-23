@@ -1,4 +1,4 @@
-package dev.mathroda.twelvereader.ui.screens.apikey
+package dev.mathroda.twelvereader.ui.screens.setapikey
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -103,15 +103,6 @@ fun SetApiKeyScreen() {
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Add your own key to continue using the app.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                )
-
                 Spacer(modifier = Modifier.height(32.dp))
 
                 OutlinedTextField(
@@ -119,7 +110,7 @@ fun SetApiKeyScreen() {
                     onValueChange = viewModel::updateApiKey,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("API Key") },
-                    placeholder = { Text("Enter your API key here") },
+                    placeholder = { Text("Enter here ...") },
                     leadingIcon = { Icon(Icons.Default.Key, contentDescription = null) },
                     trailingIcon = {
                         IconButton(
@@ -155,7 +146,7 @@ fun SetApiKeyScreen() {
                     text = getApiKeyText,
                     modifier = Modifier
                         .padding(vertical = 8.dp)
-                        .clickable { viewModel.sendUiAction(SetApiKeyActions.OpenUri("https://elevenlabs.io/account")) },
+                        .clickable { viewModel.sendUiAction(SetApiKeyActions.OpenUri("https://elevenlabs.io/app/sign-up")) },
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )

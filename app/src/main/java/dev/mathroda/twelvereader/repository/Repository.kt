@@ -13,8 +13,8 @@ interface Repository {
 
     fun getVoiceById(voiceId: String): Flow<Resource<Voice>>
 
-    suspend fun textToSpeech(
+    fun textToSpeech(
         text: String,
         voiceId: String
-    ): TextToSpeech
+    ): Flow<Resource<TextToSpeech>>
 }

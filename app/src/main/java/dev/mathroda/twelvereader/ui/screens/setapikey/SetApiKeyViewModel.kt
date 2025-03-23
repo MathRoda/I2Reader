@@ -1,4 +1,4 @@
-package dev.mathroda.twelvereader.ui.screens.apikey
+package dev.mathroda.twelvereader.ui.screens.setapikey
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

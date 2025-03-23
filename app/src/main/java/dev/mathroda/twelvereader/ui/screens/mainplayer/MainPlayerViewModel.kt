@@ -5,10 +5,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.mathroda.twelvereader.cache.datastore.DataStoreManager
-import dev.mathroda.twelvereader.domain.CharTiming
+import dev.mathroda.twelvereader.domain.TextInMemoryStorage
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.MyMediaPlayer
 import dev.mathroda.twelvereader.infrastructure.mediaplayer.PlayerState
 import dev.mathroda.twelvereader.repository.Repository
+import dev.mathroda.twelvereader.utils.Resource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -29,16 +31,14 @@ class MainPlayerViewModel(
     private val mediaPlayer: MyMediaPlayer,
     private val dataStoreManager: DataStoreManager,
     private val repository: Repository,
+    private val textSavior: TextInMemoryStorage,
     private val context: Application
 ): ViewModel() {
 
-    data class SpokenText(
-        val text: String = "",
-        val charsTiming: List<CharTiming> = emptyList()
-    )
+    var uri: String = ""
 
-    private var uri: String = ""
-    var shouldReinitialize = false
+    val text: String
+        get() = textSavior.retrieve()
 
     val playerState: StateFlow<PlayerState>
         get() = mediaPlayer.playerState
@@ -48,9 +48,6 @@ class MainPlayerViewModel(
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
-
-    private val _spokenText = MutableStateFlow(SpokenText())
-    val spokenText = _spokenText.asStateFlow()
 
     val mediaSpeed: StateFlow<Float>
         get() = dataStoreManager.MediaSpeedDefault()
@@ -73,7 +70,7 @@ class MainPlayerViewModel(
     )
 
     init {
-        viewModelScope.launch(Dispatchers.Main.immediate) {
+        viewModelScope.launch {
             while (isActive) {
                 _sliderPosition.update { mediaPlayer.currentPosition }
                 delay(100L)
@@ -83,7 +80,7 @@ class MainPlayerViewModel(
 
     fun onAction(action: MainPlayerUiActions) {
         when(action) {
-            is MainPlayerUiActions.Play -> viewModelScope.launch { initializeMedia(uri, playWhenReady = true) }
+            is MainPlayerUiActions.Play -> initializeMedia(uri, playWhenReady = true)
             is MainPlayerUiActions.Resume-> resumeMedia()
             is MainPlayerUiActions.Pause -> pauseMedia()
             is MainPlayerUiActions.SeekTo -> seekTo(action.position)
@@ -92,67 +89,47 @@ class MainPlayerViewModel(
     }
 
     fun reInitializeMedia(
-        didVoiceChange: Boolean,
-        text: String
+        didVoiceChange: Boolean
     ) {
-        viewModelScope.launch {
-            if (!didVoiceChange) {
-                initializeMedia(uri)
-                return@launch
-            }
+        if (!didVoiceChange) {
+            initializeMedia(uri)
+            return
+        }
 
-            val voice = withContext(Dispatchers.IO) {
-                dataStoreManager.SelectedVoice().value.first()
-            }
-            postTextToSpeech(text, voice)
+        viewModelScope.launch {
+            val voice = dataStoreManager.SelectedVoice().value.first()
+            repository.textToSpeech(text, voice.id)
+                .collectLatest { result ->
+                    when(result) {
+                        is Resource.Loading -> updateIsLoading(true)
+                        is Resource.Success -> {
+                            updateIsLoading(false)
+                            val file = result.data.createMp3File(context)
+                            uri = file.absolutePath
+                            initializeMedia(uri)
+                        }
+                        is Resource.Error -> updateIsLoading(false)
+
+                    }
+                }
         }
     }
 
-    private suspend fun initializeMedia(
+    private fun initializeMedia(
         uri: String,
         playWhenReady: Boolean = false
     ) {
-        val speed = withContext(Dispatchers.IO) {
-            dataStoreManager.MediaSpeedDefault().value.first()
-        }
-        withContext(Dispatchers.Main) {
-            updateSliderPosition(0L)
-            val file = File(uri)
-            mediaPlayer.setup(
-                file,
-                playWhenReady = playWhenReady,
-                speed = speed
-            )
-        }
-    }
-
-    fun generateAudio(
-        text: String
-    ) {
-        viewModelScope.launch {
-            val voice = withContext(Dispatchers.IO) {
-                dataStoreManager.SelectedVoice().value.first()
+        viewModelScope.launch(Dispatchers.IO) {
+            val speed = dataStoreManager.MediaSpeedDefault().value.first()
+            withContext(Dispatchers.Main) {
+                updateSliderPosition(0L)
+                val file = File(uri)
+                mediaPlayer.setup(
+                    file,
+                    playWhenReady = playWhenReady,
+                    speed = speed
+                )
             }
-            postTextToSpeech(text, voice, true)
-        }
-    }
-
-    private suspend fun postTextToSpeech(
-        text: String,
-        voice: DataStoreManager.DataStoreVoice,
-        playWhenReady: Boolean = false
-    ) {
-        try {
-            updateIsLoading(true)
-            val result =  repository.textToSpeech(text, voice.id)
-            updateCharsTiming(result.charsTiming)
-            val file = result.createMp3File(context)
-            uri = file.absolutePath
-            initializeMedia(uri, playWhenReady)
-        }catch (e: Throwable){
-            e.printStackTrace()
-        } finally {
-            updateIsLoading(false)
         }
     }
 
@@ -191,19 +168,5 @@ class MainPlayerViewModel(
 
     private fun updateSliderPosition(position: Long) {
         _sliderPosition.update { position }
-    }
-
-    fun updateText(text: String) {
-        _spokenText.update {
-            it.copy(text = text)
-        }
-    }
-
-    private fun updateCharsTiming(
-        charsTiming: List<CharTiming>
-    ) {
-        _spokenText.update {
-            it.copy(charsTiming = charsTiming)
-        }
     }
 }

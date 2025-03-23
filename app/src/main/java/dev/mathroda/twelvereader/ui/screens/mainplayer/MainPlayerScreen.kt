@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalLayoutApi::class)
-
 package dev.mathroda.twelvereader.ui.screens.mainplayer
 
 import androidx.compose.foundation.BorderStroke
@@ -7,7 +5,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +63,7 @@ import dev.mathroda.twelvereader.utils.OnLifecycleEvent
 import dev.mathroda.twelvereader.utils.takeWordsUpTo
 import dev.mathroda.twelvereader.utils.toDisplay
 import dev.mathroda.twelvereader.utils.toTime
+import org.koin.compose.viewmodel.koinViewModel
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
@@ -72,18 +71,24 @@ import kotlin.math.roundToInt
 @ExperimentalMaterial3Api
 @Composable
 fun MainPlayerScreen(
-    viewModel: MainPlayerViewModel,
+    uri: String,
     didVoiceChange: Boolean,
     navigateBack: () -> Unit,
     navigateToSelectVoice: () -> Unit
 ) {
+    val viewModel: MainPlayerViewModel = koinViewModel()
     val mediaPlayerState by viewModel.playerState.collectAsStateWithLifecycle()
     val sliderPositions by viewModel.sliderPosition.collectAsStateWithLifecycle()
     val mediaSpeed by viewModel.mediaSpeed.collectAsStateWithLifecycle()
     val currentReader by viewModel.currentReader.collectAsStateWithLifecycle("")
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val spokenText by viewModel.spokenText.collectAsStateWithLifecycle()
     var isBottomSheetOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uri, didVoiceChange) {
+        if (!didVoiceChange) {
+            viewModel.uri = uri
+        }
+    }
 
     Scaffold(
         topBar = { MainPlayerTopBar(navigateBack) },
@@ -114,7 +119,7 @@ fun MainPlayerScreen(
                     .padding(16.dp)
             ) {
                 MainPlayerHeader(
-                    textToSpeech = spokenText.text.takeWordsUpTo(7)
+                    textToSpeech = viewModel.text.takeWordsUpTo(7)
                 )
 
                 Spacer(Modifier.height(16.dp))
@@ -122,7 +127,7 @@ fun MainPlayerScreen(
                 MainPlayerBody(
                     totalTime = mediaPlayerState.totalDuration,
                     currentTime = sliderPositions,
-                    text = spokenText.text
+                    text = viewModel.text
                 )
             }
 
@@ -142,16 +147,8 @@ fun MainPlayerScreen(
 
     OnLifecycleEvent { event ->
         when(event) {
-            Lifecycle.Event.ON_STOP -> {
-                viewModel.clearMediaPlayer()
-                viewModel.shouldReinitialize = true
-            }
-            Lifecycle.Event.ON_START -> {
-                if (viewModel.shouldReinitialize) {
-                    viewModel.reInitializeMedia(didVoiceChange, spokenText.text)
-                    viewModel.shouldReinitialize = false
-                }
-            }
+            Lifecycle.Event.ON_PAUSE -> viewModel.clearMediaPlayer()
+            Lifecycle.Event.ON_RESUME -> viewModel.reInitializeMedia(didVoiceChange)
             Lifecycle.Event.ON_DESTROY -> viewModel.clearMediaPlayer()
             else -> Unit
         }
@@ -459,28 +456,59 @@ private fun MainPlayerBody(
     totalTime: Long
 ) {
     val words = remember(text) { text.split(" ") }
+    
+    // Introduce a buffer to prevent highlighting from being too tightly coupled to audio position
+    val highlightBuffer = 0.02f // 2% buffer to account for voice timing variations
+    
+    // Use a smoothing mechanism to prevent jumps in highlighting
     val estimatedIndex by remember(totalTime, currentTime, words) {
         derivedStateOf {
-            ((currentTime.toFloat() / totalTime) * words.size)
+            if (totalTime <= 0) return@derivedStateOf 0
+            
+            // Calculate position with buffer for smoother transitions
+            val normalizedPosition = (currentTime.toFloat() / totalTime)
+                .coerceIn(0f, 1f)
+            
+            // Apply smoothing algorithm to handle voice pacing variations
+            // This reduces the chance of highlighting getting ahead of or behind the voice
+            val smoothedPosition = when {
+                normalizedPosition < highlightBuffer -> normalizedPosition
+                normalizedPosition > (1f - highlightBuffer) -> normalizedPosition
+                else -> normalizedPosition - highlightBuffer
+            }
+            
+            (smoothedPosition * words.size)
                 .toInt()
                 .coerceIn(0, words.lastIndex)
         }
     }
-
+    
+    // Make highlighted word more visible by adding scrolling if needed
     Text(
         buildAnnotatedString {
             words.forEachIndexed { index, word ->
                 val isHighlighted = index == estimatedIndex && word.isNotBlank()
+                val isNearHighlight = (index >= estimatedIndex - 2 && index <= estimatedIndex + 2) && word.isNotBlank()
+                
                 withStyle(
                     SpanStyle(
-                        color = if (isHighlighted) Color.White else MaterialTheme.colorScheme.onSurface,
-                        background = if (isHighlighted) Color.Blue.copy(0.5f) else MaterialTheme.colorScheme.surface,
-                        fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal
+                        color = when {
+                            isHighlighted -> Color.White
+                            isNearHighlight -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        },
+                        background = if (isHighlighted) Color.Blue.copy(alpha = 0.6f) else Color.Transparent,
+                        fontWeight = when {
+                            isHighlighted -> FontWeight.ExtraBold
+                            isNearHighlight -> FontWeight.Medium
+                            else -> FontWeight.Normal
+                        }
                     )
                 ) {
                     append("$word ")
                 }
             }
-        }
+        },
+        style = MaterialTheme.typography.bodyLarge
     )
 }
