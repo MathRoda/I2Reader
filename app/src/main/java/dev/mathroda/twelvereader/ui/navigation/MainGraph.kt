@@ -63,8 +63,7 @@ fun MainGraph(
 
         composable<Destination.Home> {
             HomeScreen(
-                navigateToWriteText = { navController.navigate(Destination.WriteText) },
-                navigateToSetApiKey = { navController.navigate(Destination.SetApiKey) }
+                navigateToWriteText = { navController.navigate(Destination.WriteText) }
             )
         }
 
@@ -103,10 +102,7 @@ fun MainGraph(
         }
 
         composable<Destination.SetApiKey> {
-            SetApiKeyScreen(
-                navigateBack = navController::navigateUp,
-                isFirstInStack = navController.previousBackStackEntry == null
-            )
+            SetApiKeyScreen()
         }
     }
 }

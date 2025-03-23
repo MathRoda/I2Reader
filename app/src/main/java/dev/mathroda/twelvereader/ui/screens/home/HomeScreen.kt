@@ -12,14 +12,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilePresent
 import androidx.compose.material.icons.filled.ImportExport
-import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.DividerDefaults
@@ -57,9 +55,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun HomeScreen(
     navigateToWriteText: () -> Unit,
-    navigateToSetApiKey: () -> Unit
 ) {
-
     val viewModel: HomeViewModel = koinViewModel()
     val selectedVoice by viewModel.selectedVoice.collectAsStateWithLifecycle()
     val library by viewModel.voices.collectAsStateWithLifecycle()
@@ -92,18 +88,6 @@ fun HomeScreen(
                         )
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                    }
-
-                    Spacer(modifier = Modifier.size(8.dp))
-
-                    FilledIconButton(
-                        onClick = navigateToSetApiKey,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    ) {
-                        Icon(imageVector = Icons.Default.Key, contentDescription = "Set API Key")
                     }
                 }
             )

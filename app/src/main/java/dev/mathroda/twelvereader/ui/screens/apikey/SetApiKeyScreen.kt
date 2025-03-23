@@ -15,7 +15,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.Button
@@ -26,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,10 +48,7 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @ExperimentalMaterial3Api
 @Composable
-fun SetApiKeyScreen(
-    navigateBack: () -> Unit,
-    isFirstInStack: Boolean,
-) {
+fun SetApiKeyScreen() {
     val viewModel: SetApiKeyViewModel = koinViewModel()
     val apiKey by viewModel.apiKey.collectAsStateWithLifecycle()
     val savedApiKey by viewModel.savedApiKey.collectAsStateWithLifecycle()
@@ -81,23 +76,7 @@ fun SetApiKeyScreen(
         }
     }
 
-    Scaffold (
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    if (!isFirstInStack) {
-                        IconButton(onClick = navigateBack) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBackIosNew,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ){ paddingValues ->
+    Scaffold { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()

@@ -59,7 +59,7 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun observeVoices() {
+    fun observeVoices() {
         repository.getVoices()
             .onEach(_voices::emit)
             .launchIn(viewModelScope)
